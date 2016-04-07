@@ -1,0 +1,599 @@
+% -*- LuaLaTeX-command: "lualatex -shell-escape" -*-
+
+\documentclass[a4paper, fontsize=12pt, toc=bibliographynumbered]{scrreprt}
+\setcounter{tocdepth}{3}
+\setcounter{secnumdepth}{3}
+\usepackage{microtype}
+\usepackage[onehalfspacing]{setspace}
+\usepackage[defaultlines=2, all]{nowidow}
+\usepackage[left=4cm, right=2cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage{minted}
+\usepackage{tabu}
+\usepackage{enumitem}
+\setlist{nolistsep}
+\usepackage[footnote]{acronym}
+\usepackage[babelshorthands]{polyglossia}
+\setmainlanguage{german}
+\usepackage[colorlinks=true, linktoc=page, urlcolor=blue, citecolor=Green]{hyperref}
+
+\newcommand{\person}[2]{#1 \textsc{#2}}
+\newcommand{\mono}[1]{\texttt{#1}}
+
+\newcommand{\abbildung}[3]{\begin{figure}[H]\centering
+    \fbox{\includegraphics[width=#1\textwidth]{#2}}\caption{#3}
+    \label{fig:#2}\end{figure}}
+\begin{document}
+
+% Akronyme
+
+\newacro{OSC}{Open Sound Control}
+\newacro{MIDI}{Musical Instrument Digital Interface}
+\newacro{GPIO}{General Purpose Input Output}
+\newacro{SDK}{Software Development Kit}
+\newacro{API}{Application Programming Interface}
+\newacro{LAN}{Local Area Network}
+\newacro{DHCP}{Dynamic Host Configuration Protocol}
+\newacro{DNS}{Domain Name System}
+\newacro{HTTP}{Hyper-Text Transfer Protocol}
+\newacro{JSON}{JavaScript Object Notation}
+\newacro{SSH}{Secure SHell}
+\newacro{LFO}{Low-Frequency Oscillator}
+
+\setmainfont{Tex Gyre Termes}
+\setsansfont{Tex Gyre Heros}
+\setmonofont{Tex Gyre Cursor}[Ligatures={NoRequired,NoCommon,NoContextual}]
+\setkomafont{chapterentry}{\bfseries}
+
+\renewcommand\listoflistingscaption{Codeverzeichnis}
+
+\begin{titlepage}
+  \begin{center}
+    \textsc{\large Fachhochschule der Wirtschaft\\FHDW}\\[1em]
+    \textsc{\large Bergisch Gladbach}\\[2em]
+    \textsc{Studienarbeit}\\[6em]
+    {\LARGE Digitales Theremin mit Raspberry Pi und Leap Motion}\\[20em]
+    \begin{tabu} to 0.8\textwidth {X[l] X[r]}
+      \emph{Autor:}\linebreak
+      \person{Vasilij}{Schneidermann}
+      &
+      \emph{Prüfer:}\linebreak
+      \person{Dr.~Peter}{Tutt}
+    \end{tabu}
+    \vfill
+    \emph{Studiengang:}\\
+    Wirtschaftsinformatik\\[1em]
+    \emph{Fachbereich:}\\
+    Consulting\\[2em]
+    \emph{Abgabetermin:}\\
+    07.~April 2016
+  \end{center}
+\end{titlepage}
+
+\pagenumbering{roman}
+
+\tableofcontents
+\listoflistings
+\clearpage
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\chapter{Einführung}
+
+Ähnlich wie der populäre Arduino-Microcontroller hat der Raspberry Pi
+Kleinstcomputer der breiten Öffentlichkeit näher gebracht.  Mögliche
+Einsatzgebiete sind stromsparende Medienserver, Verwendung im
+Unterricht und Experimente mit dem \emph{Internet of Things}.  Die
+vorliegende Studienarbeit konzentriert sich auf ein etwas
+ungewöhnlicheres Projekt in dessen Rahmen ein digitales Theremin unter
+Zuhilfenahme einer Leap Motion als kontaktloses Eingabegerät umgesetzt
+wurde.
+
+\chapter{Grundlagen}
+
+\section{Raspberry Pi}
+
+Der Raspberry Pi ist ein im Jahr 2011 eingeführter
+Einplatinencomputer\footnote{BBC (2011), Online im Internet}.  Ziel
+seiner Einführung war die Verwendung im Unterricht und
+Entwicklungsländern.
+
+Das verwendete Gerät weist unter anderem USB-Ports, \ac{GPIO}-Pins,
+einen Ethernet-Port, HDMI-Anschluss und einen
+SD-Kartenleser\footnote{Raspberry Pi Foundation (2016), Online im
+  Internet}. Letzterer wird verwendet um ein Betriebssystem, in
+unserem Falle Raspbian\footnote{Raspbian (2016), Online im Internet}
+zu starten.
+
+\section{Leap Motion}
+
+Die Leap Motion ist ein Eingabegerät welches es mithilfe von Kameras
+und Infrarotsensoren ermöglicht hochauflösend Handbewegungen zu
+verfolgen\footnote{Leap Motion Inc. (2016), Online im Internet}.  Die
+dabei anfallenden Daten können nach Installation des offiziellen
+\ac{SDK} mithilfe einer \ac{API} für eine Programmiersprache
+ausgewertet werden.
+
+\section{Python}
+
+Python ist eine populäre dynamische Programmiersprache\footnote{Python
+  Software Foundation (2016), Online im Internet}.  Eines der Ziele
+von Python ist es Programme lesbar und leicht verständlich zu
+gestalten. Die Sprache unterstützt verschiedenste
+Programmierparadigmen, hat ein großes Ökosystem mit über $75,000$
+Modulen\footnote{PyPi (2016), Online im Internet} und ist
+insbesondere im wissenschaftlichen Umfeld beliebt.
+
+\section{ChucK}
+
+ChucK ist eine Programmiersprache für die Synthese, Komposition und
+Analyse von Musik\footnote{ChucK (2016), Online im Internet}.  Eine
+Besonderheit im Vergleich zu anderen Programmiersprachen in diesem
+Bereich ist der starke Fokus auf Zeit: Um Ton ausgeben zu können muss
+der Programmierer explizit Zeit verstreichen lassen.  Diese
+ungewöhnliche Designentscheidung ermöglicht es individuelle
+Komponenten der Synthese frei miteinander zu synchronisieren und auf
+das der Situation angemessene Detaillevel herunterzugehen.
+
+\section{\ac{OSC}}
+
+OSC ist ein im Audiobereich breit verwendetes Protokoll und Format zur
+Kommunikation zwischen Instrumenten\footnote{Open Sound Control
+  (2016), Online im Internet}.  Im Gegensatz zu dem populären
+\ac{MIDI}-Standard ist es deutlich leichtgewichtiger, allgemeiner und
+einfacher zu implementieren.
+
+\section{Theremin}
+
+Das Theremin ist ein elektronisches Musikinstrument welches mit den
+Händen berührungsfrei gespielt wird.  Es ist nach seinem Erfinder,
+\person{Léon}{Theremin} benannt.  Die linke Hand kontrolliert die
+Lautstärke, die rechte Hand die Tonhöhe.
+
+\chapter{Planung und Übersicht}
+
+Die anfängliche Idee die Leap Motion direkt an den Raspberry Pi
+anzuschließen wurde verworfen, da laut offizieller Stellungsnahme des
+Herstellers der Raspberry Pi nicht die nötigen Mindestanforderungen
+erfüllt\footnote{Leap Motion Community (2013), Online im Internet}.
+Stattdessen wird in einem Blogpost für ein vergleichbares
+Projekt\footnote{Leap Motion Blog (2015), Online im Internet}
+vorgeschlagen die Leap Motion an einem leistungstärkerem Rechner zu
+betreiben und den Raspberry Pi die benötigten Daten periodisch
+abfragen zu lassen.  Für die Kommunikation müssten dann ein Client und
+ein Server geschrieben werden welche ein gemeinsames Protokoll
+sprechen.  Zur Verbindung von dem Rechner und Raspberry Pi wird ein
+Netzwerk mithilfe eines Switch und zwei \ac{LAN}-Kabeln aufgebaut.
+
+Da die offizielle Anbindung an die GPIOs\footnote{PyPi RPi.GPIO
+  (2016), Online im Internet} in Python geschrieben ist und die Leap
+Motion auch eine Python-\ac{API}\footnote{Leap Motion Developer
+  (2016), Online im Internet} aufweist, wurde der Einfachheit halber
+Python für beide Komponenten verwendet.  Als Protokoll wird \ac{HTTP}
+mit \ac{JSON} als \emph{Payload} verwendet, für die Server-Seite ist
+Flask\footnote{Armin Ronacher (2016), Online im Internet} und für die
+Client-Seite Requests\footnote{Kenneth Reitz (2016), Online im
+  Internet} zuständig.
+
+Das andere Problem ist die Audiosynthese.  Zwar ist es möglich eine
+vorhandene Audiobibliothek zu nutzen und den Ton Sample für Sample zu
+konstruieren, jedoch wurde diese Vorgehensweise als zu aufwändig für
+das Ziel eingestuft\footnote{Wäre das Ziel hingegen
+  DSP-Programmierung, würde dieser Ansatz viel mehr Sinn ergeben.}.
+Aufgrund dessen wurden stattdessen drei verschiedene
+Programmiersprachen für diesen Zweck entwickelte evaluiert,
+SuperCollider\footnote{SuperCollider (2016), Online im Internet},
+Csound\footnote{Csound (2016), Online im Internet} und
+ChucK\footnote{ChucK (2016), Online im Internet}.  Super Collider war
+die anfangs favorisierte Lösung, wurde aber wegen mangelnder
+Dokumentation für konsolenbasierte Steuerung und einer
+Inkompatibilität auf der ARM-Architektur des Raspberry Pi schließlich
+verworfen.  Csound sieht sehr spannend aus, kam aber wegen des Fokus
+auf orchestralen Kompositionen nicht in Frage.  ChucK hat brauchbare
+Dokumentation und funktionierte mit wenig Setup auf dem Raspberry Pi
+und wurde deswegen ausgewählt.
+
+Für die Modulation von Tonhöhe und Lautstärke ist ebenfalls ein
+Protokoll nötig.  ChucK unterstützt das Empfangen von
+\ac{OSC}-Nachrichten nativ, deswegen wird nur noch
+pyOSC\footnote{pyOSC (2010), Online im Internet} auf der Client-Seite
+benötigt.
+
+Der Aufbau lässt sich in folgender Grafik zusammenfassen:
+
+\abbildung{0.8}{digitales-theremin}{Digitales Theremin, Quelle: Eigene Abbildung}
+
+\chapter{Umsetzung}
+
+\section{Netzwerksetup}
+
+Der Raspberry Pi wird ohne vorinstalliertes Betriebssystem geliefert,
+daher ist es notwendig zuerst ein \emph{Image} herunterzuladen und es
+auf eine SD-Karte zu schreiben.  Die Quellen und Anleitungen dafür
+werden vom Raspbian-Projekt
+bereitgestellt\footnote{\url{https://www.raspbian.org/RaspbianImages}},
+einem Debian\footnote{\url{https://www.debian.org/}}-Derivat für den
+Raspberry Pi.  Um den Computer bedienen zu können, ist es notwendig
+Tastatur und Monitor anzuschließen.
+
+Das Netzwerk ist sehr einfach aufgebaut.  Dem Raspberry Pi wird die
+IP-Adresse \mono{192.168.178.23} und dem Laptop \mono{192.168.178.24}
+zugewiesen\footnote{Wichtig hier ist darauf zu achten, dass diese
+  Adressen noch nicht im Netzwerk vergeben sind oder noch besser, Teil
+  eines anderen als des aktuell verwendeten lokalen Netzwerks sind.}.
+Unter Zuhilfenahme eines \ac{DHCP}-Servers und der von Google
+bereitgestellten Adresse \mono{8.8.8.8} für die \ac{DNS}-Auflösung
+kann die Konfiguration auf ein Minimum beschränkt werden.  Fügt man
+Port Forwarding und Masquerading hinzu, kann der Raspberry Pi die
+Internetverbindung vom Laptop mitverwenden was z.B.~für die
+Installation neuer Pakete äußerst hilfreich ist.
+
+Die Konfiguration wird mithilfe des \mono{ping}-Tools
+getestet: Es sollte möglich sein von beiden Seiten aus die andere
+Seite zu erreichen.  Im Anschluss dessen kann man sich vom Laptop aus
+mit \mono{ssh pi@192.168.178.23} auf den Raspberry Pi über \ac{SSH}
+verbinden\footnote{Annahme hier ist dass der Benutzername auch
+  \mono{pi} ist}.
+
+Schnitzer bei der Konfiguration können ausgebessert werden indem man
+die SD-Karte herausnimmt, in einen anderen Rechner einbindet und die
+Datei \mono{/boot/cmdline.txt} editiert.  Um z.B.~mit einer festen
+IP-Adresse erreichbar zu sein, genügt es den Parameter
+\mono{ip=<address>} hinzuzufügen.  Dieser kann anschließend nach
+erfolgreicher Reparatur des Netzwerksetups für einen normalen
+Bootvorgang wieder entfernt werden.
+
+\section{Handtracking}
+
+Die Leap Motion-API bietet zwei Modi an: Event-basiert (für die
+Verarbeitung aller Daten) und Polling (bedarfsgesteuerte Verarbeitung
+von Daten).  Da nur ein Bruchteil der Daten periodisch angefragt wird,
+ist letzterer Ansatz sinnvoller.  Folgender Code ist in Aufarbeitung
+und Bereitstellung der Daten aufgeteilt:
+
+\begin{minted}{python}
+import leap
+import logging
+from flask import Flask, jsonify
+
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
+
+app = Flask(__name__)
+controller = leap.Controller()
+
+def hand_state():
+    frame = controller.frame()
+    hands = frame.hands
+    state = {'left': None, 'right': None}
+
+    for hand in hands:
+        if hand.is_valid:
+            if hand.is_left:
+                state['left'] = hand.palm_position.y
+            elif hand.is_right:
+                state['right'] = hand.palm_position.y
+
+    return state
+
+@app.route('/')
+def api_root():
+    return jsonify(hand_state())
+
+def main():
+    app.run(host='0.0.0.0')
+
+if __name__ == '__main__':
+    main()
+\end{minted}
+
+Anschließend kann der Server mithilfe von \mono{python laptop.py}
+gestartet werden.  In einem anderen Terminal kann man die
+Funktionalität dessen durch \mono{curl http://localhost:5000} testen.
+Je nach Handstatus sollte JSON mit relativen Distanzen oder dem
+Sonderwert \mono{null} für eine nicht vorhandene Hand zurückgegeben
+werden.
+
+\section{Visuelles Feedback}
+
+Um mehr Rückmeldung vom Raspberry Pi erhalten zu können wird ein
+\emph{Breadboard} mit zwei Leuchtdioden-Schaltkreisen bestückt:
+
+\abbildung{0.8}{LED}{LED-Schaltkreis, Quelle: Eigene Abbildung}
+
+Die Idee dabei ist, dass man beim Spielen des Instruments informiert
+wird ob die Hand zur Steuerung der Tonhöhe sich im validen Bereich
+befindet oder darüber hinaus geht.  Im ersteren Fall wird eine grüne
+Leuchtdiode angeschaltet und eine rote Leuchtdiode ausgeschaltet,
+ansonst gilt das gleiche umgekehrt.  Der Raspberry Pi ermöglicht es
+mit der Mehrzahl seiner GPIO-Anschlüsse einen elektrischen Schalter zu
+implementieren.  Folgender Code geht davon aus, dass einmal Pin 5 und
+6 (BCM 3) sowie Pin 40 und 39 (BCM 21) angeschlossen sind\footnote{Zur
+  Lokalisierung der Pins ist \url{http://pinout.xyz/} hilfreich}:
+
+\begin{minted}{python}
+import RPi.GPIO as GPIO
+import requests
+import time
+
+from OSC import OSCMessage
+from OSC import OSCClient
+
+RED_LED = 3
+GREEN_LED = 21
+SERVER = 'http://192.168.178.24:5000'
+
+def led_setup():
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setwarnings(False)
+    GPIO.setup(RED_LED, GPIO.OUT)
+    GPIO.setup(GREEN_LED, GPIO.OUT)
+
+def red_led_on():
+    GPIO.output(RED_LED, 1)
+
+def red_led_off():
+    GPIO.output(RED_LED, 0)
+
+def green_led_on():
+    GPIO.output(GREEN_LED, 1)
+
+def green_led_off():
+    GPIO.output(GREEN_LED, 0)
+
+def led_teardown():
+    GPIO.cleanup()
+
+def hand_state():
+    return requests.get(SERVER).json()
+
+def led_control(state):
+    distance = state['right']
+    if distance and distance > 100 and distance < 600:
+        red_led_off()
+        green_led_on()
+    else:
+        red_led_on()
+        green_led_off()
+
+def clamp(n, lower, upper):
+    if n < lower:
+        return 0.0
+    elif n >= lower and n < upper:
+        return (n - lower) / float(upper)
+    else:
+        return 1.0
+
+def main():
+    led_setup()
+    client = OSCClient()
+    address = ('127.0.0.1', 6666)
+    while True:
+        state = hand_state()
+        led_control(state)
+        if state['left']:
+            msg = OSCMessage('/volume')
+            msg.append(clamp(state['left'], 100, 600))
+            client.sendto(msg, address)
+        if state['right]:
+            msg = OSCMessage('/pitch)
+            msg.append(clamp(state['right], 100, 600))
+            client.sendto(msg, address)
+        time.sleep(0.01)
+    led_teardown()
+
+if __name__ == '__main__':
+    main()
+\end{minted}
+
+Ähnlich wie das vorige Code-Beispiel wird dieses mit \mono{python
+  raspberry.py} ausgeführt.  Funktioniert alles, kann man die grüne
+Leuchtdiode durch das Bewegen der rechten Hand über den Sensor zum
+Leuchten bringen.
+
+Das PyOSC-Modul ist nicht direkt aus den Raspbian-Paketarchiven
+installierbar, deswegen ist eine manuelle Installation notwendig:
+
+\begin{minted}{shell-session}
+$ curl -Ok https://trac.v2.nl/raw-attachment/wiki/pyOSC/\
+pyOSC-0.3.5b-5294.tar.gz
+$ cd pyOSC-0.3.5b-5294
+$ sudo ./setup.py install
+\end{minted}
+
+\section{Audiosynthese}
+
+Es ist anzumerken, dass ChucK unter Raspbian nicht aktuell genug für
+das nachfolgende Beispiel ist.  Für die manuelle Installation sind
+folgende Schritte nötig:
+
+\begin{minted}{shell-session}
+$ curl -O \
+  http://chuck.cs.princeton.edu/release/files/chuck-1.3.5.2.tgz
+$ tar -xf chuck-1.3.5.2
+$ cd chuck-1.3.5.2/src
+$ sudo apt-get install gcc bison flex libasound2 \
+  libasound2-dev libsndfile1 libsndfile1-dev
+$ make linux-alsa
+$ sudo make install
+\end{minted}
+
+Bei genauerer Beobachtung eines Theremins fällt auf, dass es mehr
+Anforderungen als die Steuerbarkeit von Lautstärke und Tonhöhe mit der
+Hand gibt:
+
+\begin{itemize}
+\item Reine, stumpfe Klangfarbe
+\item Niederfrequente Modulation der Tonhöhe
+\item Linearisiertes Frequenzfeld
+\item Übergangslose Änderung der Tonhöhe
+\end{itemize}
+
+Eine Umsetzung aller Punkte findet sich in folgendem Code-Beispiel in
+ChucK:
+
+\begin{minted}{c}
+SinOsc sin => dac;
+0.5 => dac.gain;
+440.0 => float oldFreq;
+440.0 => float newFreq;
+440.0 => sin.freq;
+
+SinOsc lfo => blackhole;
+5 => lfo.freq;
+
+OscIn oscpitch;
+6666 => oscpitch.port;
+"/pitch" => oscpitch.addAddress;
+
+OscIn oscvol;
+6666 => oscvol.port;
+"/volume" => oscvol.addAddress;
+
+fun float fmin(float a, float b) {
+    return (a < b) ? a : b;
+}
+
+fun void interpolate() {
+    1.5 => float step;
+    while (true) {
+        fmin(oldFreq, newFreq) + Math.fabs(oldFreq - newFreq) /
+            step => oldFreq;
+
+        oldFreq => sin.freq;
+        5::ms => now;
+    }
+}
+
+fun void wobble() {
+    while (true) {
+        lfo.last() * 0.01 * oldFreq +=> oldFreq;
+        10::ms => now;
+    }
+}
+
+fun void adjustVolume() {
+    while (true) {
+        oscvol => now;
+        while (oscvol.recv(OscMsg msg)) {
+            Std.fabs(msg.getFloat(0)) => dac.gain;
+        }
+    }
+}
+
+spork ~ interpolate();
+spork ~ wobble();
+spork ~ adjustVolume();
+
+while (true) {
+    oscpitch => now;
+    while (oscpitch.recv(OscMsg msg)) {
+        Std.fabs(msg.getFloat(0)) => float pitch;
+        Math.pow(2, pitch * 2 + 8) => newFreq;
+    }
+}
+\end{minted}
+
+Zum Testen führt man das obige Code-Beispiel mit \mono{chuck
+  theremin.ck} aus.  Sollte nichts zu hören sein, kann es sein, dass
+ChucK nicht die richtige Soundkarte erkannt hat.  Man kann alle
+bekannten mithilfe von \mono{chuck --probe} auflisten, ist
+z.B.~Soundkarte 3 die erwünschte, verwendet man \mono{chuck --dac3
+  theremin.ck}.
+
+Die Klangfarbe wurde mithilfe eines Sinusoszillators angenähert.  Dies
+entspricht nicht ganz einem authentischen Theremin\footnote{Dafür wäre
+  eine leichte Verzerrung der Wellenform notwendig, diese wurde der
+  Einfachheit halber ausgelassen}, nähert dieses aber hinreichend an.
+Für die niederfrequente Modulation wird ein \ac{LFO} verwendet
+welcher die Tonhöhe mit einer Frequenz von 5~hz moduliert.
+
+Die Linearisierung des Frequenzfeldes klingt schwierig, ist aber
+leicht umsetzbar wenn man bedenkt, dass eine Verdopplung der Frequenz
+einen Oktavensprung bedeutet.  Im obigen Beispiel werden die
+Eingabewerte zwischen $0.0$ und $1.0$ auf Frequenzen zwischen $2^8 hz$
+und $2^{10} hz$ verteilt.
+
+Die Übergänge werden mithilfe einer einfachen Interpolation zwischen
+den Zeitpunkten jedes eingehenden OSC-Pakets geglättet.  Man startet
+mit einer Ausgangsfrequenz, das OSC-Paket setzt eine Zielfrequenz und
+die Interpolation setzt die Ausgangsfrequenz auf einen Zwischenwert.
+
+\chapter{Ehrenwörtliche Erklärung}
+
+Hiermit erkläre ich, dass ich die vorliegende Studienarbeit
+selbständig angefertigt habe.  Es wurden nur die in der Arbeit
+ausdrücklich benannten Quellen und Hilfsmittel benutzt.  Wörtlich oder
+sinngemäß übernommenes Gedankengut habe ich als solches kenntlich
+gemacht. Diese Arbeit hat in gleicher oder ähnlicher Form noch keiner
+Prüfungsbehörde vorgelegen.
+
+Vasilij Schneidermann
+
+Bergisch Gladbach, den 7.~April 2016.
+
+% \chapter{Quellenverzeichnis}
+\renewcommand{\bibname}{Quellenverzeichnis}
+\begin{thebibliography}{9}
+
+  \BreakBibliography{\minisec{Internetquellen}}
+\bibitem{bbc}BBC (2011), \emph{BBC - dot.Rory: A 15 pound computer to
+    inspire young programmers}, Online im Internet:
+  \url{http://www.bbc.co.uk/blogs/thereporters/rorycellanjones/2011/05/a_15_computer_to_inspire_young.html},
+  Stand: 07.04.2016
+\bibitem{rpi2-specs}Raspberry Pi Foundation (2016), \emph{Raspberry Pi
+    2 Model B}, Online im Internet:
+  \url{https://www.raspberrypi.org/products/raspberry-pi-2-model-b/},
+  Stand: 07.04.2016
+\bibitem{raspbian}Raspbian (2016), \emph{FrontPage - Raspbian}, Online
+  im Internet: \url{https://www.raspbian.org/}, Stand: 07.04.2016
+\bibitem{leapmotion}Leap Motion Inc. (2016), \emph{Leap Motion | Mac
+    \& PC Motion Controller for Games, Design, Virtual Reality \&
+    More}, Online im Internet: \url{https://www.leapmotion.com/},
+  Stand: 07.04.2016
+\bibitem{python}Python Software Foundation (2016), \emph{Welcome to
+    Python.org}, Online im Internet: \url{https://www.python.org/},
+  Stand: 07.04.2016
+\bibitem{pypi}PyPi (2016), \emph{PyPi - the Python Package Index :
+    Python Package Index}, Online im Internet:
+  \url{https://pypi.python.org/pypi}, Stand: 07.04.2016
+\bibitem{chuck}ChucK (2016), \emph{ChucK => Strongly-timed, On-the-fly
+    Music Programming Language}, Online im Internet:
+  \url{http://chuck.cs.princeton.edu/}, Stand: 07.04.2016
+\bibitem{osc}Open Sound Control (2016), \emph{opensoundcontrol.org |
+    an Enabling Encoding for Media Applications}, Online im Internet:
+  \url{http://opensoundcontrol.org/}, Stand: 07.04.2016
+\bibitem{leapmotion-community}Leap Motion Community (2013), \emph{Leap
+    Motion support on Raspbmc (Raspberry Pi) - Customer Support - Leap
+    Motion Community}, Online im Internet:
+  \url{https://community.leapmotion.com/t/leap-motion-support-on-raspbmc-raspberry-pi/155},
+  Stand: 07.04.2016
+\bibitem{leapmotion-blog}Leap Motion Blog (2015), \emph{How to
+    Integrate Leap Motion with Arduino \& Raspberry Pi}, Online im
+  Internet:
+  \url{http://blog.leapmotion.com/integrate-leap-motion-arduino-raspberry-pi/},
+  Stand: 07.04.2016
+\bibitem{pypi-gpio}PyPi RPi.GPIO (2016), \emph{RPi.GPIO 0.6.2 : Python
+    Package Index}, Online im Internet:
+  \url{https://pypi.python.org/pypi/RPi.GPIO}, Stand: 07.04.2016
+\bibitem{leapmotion-developer}Leap Motion Developer (2016),
+  \emph{Python SDK Documentation - Leap Motion Python SDK v2.3
+    documentation}, Online im Internet:
+  \url{https://developer.leapmotion.com/documentation/python/index.html},
+  Stand: 07.04.2016
+\bibitem{flask}Armin Ronacher (2016), \emph{Welcome | Flask (A Python
+    Microframework)}, Online im Internet:
+  \url{http://flask.pocoo.org/}, Stand: 07.04.2016
+\bibitem{requests}Kenneth Reitz (2016), \emph{Requests: HTTP for
+    Humans - Requests 2.9.1 documentation}, Online im Internet:
+  \url{http://docs.python-requests.org/en/master/}, Stand: 07.04.2016
+\bibitem{supercollider}SuperCollider (2016), \emph{SuperCollider »
+    SuperCollider}, Online im Internet:
+  \url{https://supercollider.github.io/}, Stand: 07.04.2016
+\bibitem{csound}Csound (2016), \emph{Home | Csound Community}, Online
+  im Internet: \url{https://csound.github.io/}, Stand: 07.04.2016
+\bibitem{pyosc}pyOSC (2010), \emph{pyOSC - V2\_Lab Projects}, Online im
+  Internet: \url{https://trac.v2.nl/wiki/pyOSC}, Stand: 07.04.2016
+
+\end{thebibliography}
+
+\end{document}
