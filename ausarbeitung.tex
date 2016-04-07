@@ -374,9 +374,9 @@ def main():
             msg = OSCMessage('/volume')
             msg.append(clamp(state['left'], 100, 600))
             client.sendto(msg, address)
-        if state['right]:
-            msg = OSCMessage('/pitch)
-            msg.append(clamp(state['right], 100, 600))
+        if state['right']:
+            msg = OSCMessage('/pitch')
+            msg.append(clamp(state['right'], 100, 600))
             client.sendto(msg, address)
         time.sleep(0.01)
     led_teardown()
